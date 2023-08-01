@@ -1,0 +1,265 @@
+<html> 
+    <head>
+        <script src="https://code.jquery.com/jquery-3.7.0.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+        <script src="isKeyPressed.min.js"></script>
+        <style>
+            body, html {
+                margin: 0px;
+                padding: 0px;
+                overflow: none;
+                background-color: #333;
+            }
+
+            #gv_miss {
+                height: 90vh;
+                width: 120.8053vh;
+                position: fixed;
+                top: 0px;
+                left: 0px;
+                z-index: 0;
+                object-fit: fill;
+            }
+
+            #gv_gotit {
+                height: 90vh;
+                width: 120.8053vh;
+                position: fixed;
+                top: 0px;
+                left: 0px;
+                z-index: 1;
+                visibility: hidden;
+                object-fit: fill
+            }
+
+            #track {
+                position: fixed;
+                width: 120.8053vh;
+                height: 10vh;
+                top: 90vh;
+                background-color: #222;
+                z-index: 0;
+            }
+
+            #almost-there {
+                position: fixed;
+                background-color: #333;
+                width: 32.9469vh;
+                height: 10vh;
+                top: 90vh;
+                left: 43.9292vh;
+                z-index: 1;
+            }
+
+            #sweet-spot {
+                position: fixed;
+                background-color: #444;
+                width: 10.9823vh;
+                height: 10vh;
+                left: 54.9115vh;
+                top: 90vh;
+                z-index: 2;
+            }
+
+            .hit-timestamp {
+                background-color: #0f0;
+                width: 0.2vh;
+                height: 10vh;
+                z-index: 3;
+                position: fixed;
+                top: 90vh;
+                animation: become-transparent 3s linear;
+                animation-fill-mode: forwards;
+            }
+
+            #average-timestamp {
+                animation: none;
+                width: 0.3vh;
+                background-color: #a0f;
+                transition: left 0.2s;
+                left: 60.40265vh;
+            }
+
+            @keyframes become-transparent {
+                0% {
+                    display: none;
+                    opacity: 1;
+                    background-color: #0f0;
+                }
+
+                100% {
+                    display: block;
+                    opacity: 0.2;
+                    background-color: #aa3;
+                }
+            }
+
+            @keyframes fade-away {
+                0% {
+                    opacity: 1;
+                }
+
+                90% {
+                    opacity: 0.9;
+                }
+
+                100% {
+                    opacity: 0;
+                }
+            }
+
+            .info-bar {
+                position: fixed;
+                top: 0vh;
+                left: 120.8053vh;
+                font-size: 24px;
+                font-family: Consolas;
+                color: white;
+                padding: 20px;
+            }
+
+            #console {
+                font-size: 16px;
+            }
+
+            .console-temp {
+                animation: fade-away 20s linear;
+                animation-fill-mode: forwards;
+            }
+
+        </style>
+    </head>
+    <body>
+        <video id="gv_miss" width="1200" height="896" preload="auto">
+            <source src="miss.mp4" type="video/mp4">
+        </video>
+        <video id="gv_gotit" width="1200" height="896" preload="auto">
+            <source src="gotit.mp4" type="video/mp4">
+        </video>
+
+        <div id="track"></div>
+        <div id="almost-there"></div>
+        <div id="sweet-spot"></div>
+        <div class="hit-timestamp" id="average-timestamp"></div>
+        <div class="info-bar">
+            <h2>Madeline's Gorge Checker</h2>
+            <h3 id="press-to-start" style="color: #ff0;">
+                Press A to start...
+            </h3>
+            <div id="average-text">
+                Moving Average: +0.00
+            </div>
+            <div id="hits-text">
+                Hits: 0
+            </div>
+            <div id="misses-text">
+                Misses: 0
+            </div>
+            <div id="consistency-text">
+                Consistency: ...
+            </div>
+            <br>
+            <div id="current-streak">
+                Streak: 0
+            </div>
+            <div id="longest-streak">
+                Longest Streak: 0
+            </div>
+            <br>
+            <div id="console">
+            </div>
+        </div>
+
+        <script>
+            var target_frame = 128;
+
+            var moving_average = null;
+            var hits = 0;
+            var misses = 0;
+            var streak = 0;
+            var longest_streak = 0;
+            var attempts = 0;
+            var pressed_this_time = false;
+
+            var a_was_pressed = false;
+
+            var gv_video = document.getElementById("gv_miss");
+            var gotit_video = document.getElementById("gv_gotit");
+
+            gv_video.addEventListener("ended", function() {
+                gv_video.currentTime = 0;
+                gv_video.muted = false;
+                gv_video.play();
+                gotit_video.style.visibility = 'hidden';
+                gotit_video.currentTime = 0;
+                pressed_this_time = false;
+            }, false);
+
+            window.addEventListener('gamepadconnected', e => {
+                
+            });
+
+            setInterval(function() {
+                var gamepads = navigator.getGamepads();
+                var frame = Math.floor(gv_video.currentTime*30);
+
+                if (KeyPressing.isKeyPressed(65) || (gamepads[0] != null && gamepads[0].buttons[0].pressed)) {
+                    if (!a_was_pressed && !pressed_this_time) {
+                        if (gv_video.paused) {
+                            gv_video.play();
+                            $("#press-to-start").css("display", "none");
+                        } else {
+                            if (frame >= target_frame-5 && frame <= target_frame+5) {
+                                pressed_this_time = true;
+                                var offset = gv_video.currentTime*30 - target_frame;
+                                if (frame == target_frame && !gv_video.paused) {                                       
+                                    gotit_video.play();
+                                    gv_video.muted = true;
+                                    gotit_video.currentTime = offset/30;
+                                    gotit_video.style.visibility = 'visible';
+                                    hits += 1;
+                                    streak += 1;
+                                    if (streak >= longest_streak) {
+                                        longest_streak = streak;
+                                    }
+                                    $("#console").prepend(`<div class="console-temp" style="color:#0f0;">got it</div>`);
+                                } else {
+                                    misses += 1;
+                                    streak = 0;
+                                    if (offset < 0) {
+                                        $("#console").prepend(`<div class="console-temp" style="color:#00f;">${-(offset+0.5).toFixed(0)+1}f early</div>`);
+                                    }
+                                    if (offset >= 1) {
+                                        $("#console").prepend(`<div class="console-temp" style="color:#f00;">${(offset-0.5).toFixed(0)}f late</div>`);
+                                    }                                   
+                                }
+
+                                $("body").append(`<div class="hit-timestamp" style="left: ${(offset+5)*(120.8053/11)}vh;"></div>`);
+
+                                attempts += 1;
+
+                                if (moving_average == null) {
+                                    moving_average = offset;
+                                } else {
+                                    moving_average = ((Math.min(attempts, 20)-1) * moving_average + offset) / Math.min(attempts, 20)
+                                }
+
+                                $("#average-timestamp").css("left", `${(moving_average+5)*(120.8053/11)}vh`);
+                                $("#average-text").text(`Moving Average: ${moving_average-0.5 > 0 ? "+" : ""}${(moving_average-0.5).toFixed(2)}`)
+                                $("#hits-text").text(`Hits: ${hits}`);
+                                $("#misses-text").text(`Misses: ${misses}`);
+                                $("#consistency-text").text(`Consistency: ${(hits/attempts*100).toFixed(1)}%`);
+                                $("#current-streak").text(`Streak: ${streak}`);
+                                $("#longest-streak").text(`Longest Streak: ${longest_streak}`);
+                            }
+                        }
+                    }
+
+                    a_was_pressed = true;
+                } else {
+                    a_was_pressed = false;
+                }
+            }, 1)
+
+        </script> 
+    </body> 
+</html>
