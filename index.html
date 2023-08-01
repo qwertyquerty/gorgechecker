@@ -170,7 +170,7 @@
         </div>
 
         <script>
-            var target_frame = 128;
+            var target_frame = 129;
 
             var moving_average = null;
             var hits = 0;
@@ -210,11 +210,12 @@
                         } else {
                             if (frame >= target_frame-5 && frame <= target_frame+5) {
                                 pressed_this_time = true;
-                                var offset = gv_video.currentTime*30 - target_frame;
-                                if (frame == target_frame && !gv_video.paused) {                                       
+                                var time = gv_video.currentTime;
+                                var offset = time*30 - target_frame;
+                                if (frame == target_frame && !gv_video.paused) {
+                                    gotit_video.currentTime = offset/30;                                
                                     gotit_video.play();
                                     gv_video.muted = true;
-                                    gotit_video.currentTime = offset/30;
                                     gotit_video.style.visibility = 'visible';
                                     hits += 1;
                                     streak += 1;
